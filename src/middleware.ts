@@ -12,12 +12,13 @@ import { MonitoringConfig } from "./config";
 export class MonitoringMiddleware {
   private config: MonitoringConfig;
   private logQueue: any[] = [];
+  private intervalId: NodeJS.Timeout; // Store the interval ID
 
   constructor(config: MonitoringConfig) {
     this.config = config;
     const interval = config.batchInterval || 5000;
     // Set up periodic flushing of queued logs.
-    setInterval(() => {
+    this.intervalId = setInterval(() => {
       this.flushLogs();
     }, interval);
   }
@@ -25,7 +26,7 @@ export class MonitoringMiddleware {
   /**
    * Express middleware function that captures request metrics.
    */
-  public middleware() {
+  public middleware(mockRequest: unknown, mockResponse: Response<any, Record<string, any>>, mockNext: unknown) {
     return (req: Request, res: Response, next: NextFunction): void => {
       const start = Date.now();
 
@@ -70,5 +71,8 @@ export class MonitoringMiddleware {
       // Optionally, re-queue logs if sending fails.
       this.logQueue = logsToSend.concat(this.logQueue);
     }
+  }
+  public cleanup() {
+    clearInterval(this.intervalId);
   }
 }
